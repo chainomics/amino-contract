@@ -1,17 +1,25 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
+import "openzeppelin/token/ERC20/ERC20.sol";
+import "openzeppelin/utils/structs/BitMaps.sol";
+import "openzeppelin/utils/structs/EnumerableSet.sol";
+
 struct UserData { //TODO pack the struct for better gas savings
-    uint40 lastCheckInDay;
-    uint40 lastStepRewardDay;
-    uint40 lastChallengeRewardDay;
-    uint40 lastLeaderboardRewardDay;
-    uint40 lastShoppingRewardDay;
     uint40 firstDay;
     bool hasClaimedPromoTokens;
+    BitMaps.BitMap dailyCheckIns;
+    BitMaps.BitMap stepCheckIns;
+    BitMaps.BitMap challengeCheckIns;
+    BitMaps.BitMap leaderboardCheckIns;
+    BitMaps.BitMap shoppingCheckIns;
 }
 
 contract Amino is ERC20 {
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+    using BitMaps for BitMaps.BitMap;
+
     uint256 public constant DAILY_CHECKIN_REWARD_MAX = 1000000000000000000000; //TODO to confirm this number with client
     uint256 public constant DAILY_STEP_REWARD_MAX = 1000000000000000000000;
     uint256 public constant DAILY_CHALLENGE_REWARD_MAX = 1000000000000000000000;
@@ -20,6 +28,12 @@ contract Amino is ERC20 {
     address public minter;
     address public owner;
     bool public isShoppingRewardEnabled;
+    mapping(address user => UserData userData) internal userData;
+    mapping(address user => bool rewardProcessed) public isReferralRewardProcessed;
+    mapping(address user => EnumerableSet.AddressSet referres) internal referrals;
+
+
+    constructor() ERC20("name", "symbol") {}
 
 
     //FOLLOWING MODIFIERS ARE FOR ILLUSTRATION PURPOSE FOR BETTER CODE READABILITY
@@ -84,12 +98,12 @@ contract Amino is ERC20 {
         rewardAmountInUSD = dailyShoppingRewardAmount * priceInUSD;
     }
 
-    function dailyCheckInWheel()  returns () {
+    function dailyCheckInWheel() external {
         
     }
 
-    function referralReward()  returns () {
-        
+    function referralReward(address user, address[] memory referres) external onlyMinter {
+        require(referres.length == 3);
     }
 
     function grantPromoCoins(address user) external hasNotClaimedPromoTokens() onlyMinter() {
