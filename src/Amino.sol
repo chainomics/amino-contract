@@ -176,6 +176,13 @@ contract Amino is ERC20, Ownable {
         _mint(user, promoRewardAmount);
     }
 
+    function referred(address user1, address user2) external onlyOwner() {
+        if (user1 == address(0) || user2 == address(0)) {
+            revert Amino_Zero_Arguments();
+        }
+        referrals[user1].add(user2);
+    }
+
     function disableShoppingRewards() external onlyOwner() {
         isShoppingRewardEnabled = false;
     }
