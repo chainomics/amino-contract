@@ -15,7 +15,7 @@ error Amino_Promo_Only_To_New_Users();
 error Amino_Not_Eligible_For_Referral();
 error Amino_Shopping_Reward_Disabled();
 
-struct UserData { //TODO pack the struct for better gas savings
+struct UserData {
     bool hasClaimedPromoTokens;
     uint48 firstDay;
     uint40 totalDailyCheckIns;
@@ -50,6 +50,15 @@ contract Amino is ERC20, Ownable {
     mapping(address user => bool rewardProcessed) public isReferralRewardProcessed;
     mapping(address user => EnumerableSet.AddressSet referres) internal referrals;
 
+    event DailyCheckIn(address indexed user, uint256 amount);
+    event DailyStepCheckIn(address indexed user, uint256 amount);
+    event DailyChallengeCheckIn(address indexed user, uint256 amount);
+    event DailyLeaderboardCheckIn(address indexed user, uint256 amount);
+    event ShoppingReward(address indexed user, uint256 amount);
+    event ReferralReward(address indexed user);
+    event UpdateTimeInterval(uint256 interval);
+    event Referred(address indexed referrer, address indexed referree);
+    event PromoCoinsReward(address indexed user, uint256 amount);
 
     constructor(address _owner) ERC20("Amino", "AMN") {
         if (_owner == address(0)) {
@@ -79,6 +88,7 @@ contract Amino is ERC20, Ownable {
         _userData.totalDailyCheckIns++;
         _userData.lastCalledDailyCheckIn = uint40(block.timestamp);
         _mint(user, dailyCheckInAmount);
+        emit DailyCheckIn(user, dailyCheckInAmount);
     }
 
     function dailyStepReward(address user, uint256 dailyStepRewardAmount) external isAuthorized {
@@ -93,6 +103,7 @@ contract Amino is ERC20, Ownable {
         _userData.stepCheckIns.set(currentDay);
         _userData.lastCalledStepCheckIn = uint40(block.timestamp);
         _mint(user, dailyStepRewardAmount);
+        emit DailyStepCheckIn(user, dailyStepRewardAmount);
     }
 
     function dailyChallengeReward(address user, uint256 dailyChallengeRewardAmount) external isAuthorized {
@@ -107,6 +118,7 @@ contract Amino is ERC20, Ownable {
         _userData.challengeCheckIns.set(currentDay);
         _userData.lastCalledChallengeCheckIn = uint40(block.timestamp);
         _mint(user, dailyChallengeRewardAmount);
+        emit DailyChallengeCheckIn(user, dailyChallengeRewardAmount);
     }
 
     function dailyLeaderboardReward(address user, uint256 dailyLeaderboardRewardAmount) external isAuthorized{
@@ -121,6 +133,7 @@ contract Amino is ERC20, Ownable {
         _userData.leaderboardCheckIns.set(currentDay);
         _userData.lastCalledLeaderboardCheckIn = uint40(block.timestamp);
         _mint(user, dailyLeaderboardRewardAmount);
+        emit DailyLeaderboardCheckIn(user, dailyLeaderboardRewardAmount);
     }
 
     function shoppingRewards(address user, uint256 dailyShoppingRewardAmount, uint256 priceInUSD) external isAuthorized returns(uint256 rewardAmountInUSD) {
@@ -139,13 +152,14 @@ contract Amino is ERC20, Ownable {
         _userData.lastCalledShoppingCheckIn = uint40(block.timestamp);
         rewardAmountInUSD = dailyShoppingRewardAmount * priceInUSD;
         _mint(user, dailyShoppingRewardAmount);
+        emit ShoppingReward(user, dailyShoppingRewardAmount);
     }
 
     function dailyCheckInWheel() external {
         
     }
 
-    function referralReward(address user, address[] memory referres, uint256 referralRewardAmount) external isAuthorized {
+    function referralReward(address user, address[] memory referres) external isAuthorized {
         if (referres.length != 3) {
             revert Amino_Invalid_Arguments();
         }
@@ -160,7 +174,7 @@ contract Amino is ERC20, Ownable {
             isReferralRewardProcessed[referres[i]] = true;
         }
         _mint(user, 100 * 10 ** decimals());
-
+        emit ReferralReward(user);
     }
 
     function grantPromoCoins(address user, uint256 promoRewardAmount) external isAuthorized {
@@ -174,6 +188,7 @@ contract Amino is ERC20, Ownable {
         uint256 currentDay = block.timestamp % SECONDS_IN_DAY;
         _userData.firstDay = uint48(currentDay);
         _mint(user, promoRewardAmount);
+        emit PromoCoinsReward(user, promoRewardAmount);
     }
 
     function referred(address user1, address user2) external onlyOwner() {
@@ -181,6 +196,7 @@ contract Amino is ERC20, Ownable {
             revert Amino_Zero_Arguments();
         }
         referrals[user1].add(user2);
+        emit Referred(user1, user2);
     }
 
     function disableShoppingRewards() external onlyOwner() {
@@ -192,5 +208,6 @@ contract Amino is ERC20, Ownable {
             revert Amino_Zero_Arguments();
         }
         timeInterval = newTimeInterval;
+        emit UpdateTimeInterval(newTimeInterval);
     }
 }
