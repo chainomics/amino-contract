@@ -211,6 +211,8 @@ contract Amino is ERC20, Ownable {
         emit PromoCoinsReward(user, promoRewardAmount);
     }
 
+    /// @param user1 address of the user who referred
+    /// @param user2 address of the user who is referred
     function referred(address user1, address user2) external onlyOwner() {
         if (user1 == address(0) || user2 == address(0)) {
             revert Amino_Zero_Arguments();
