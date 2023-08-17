@@ -31,6 +31,8 @@ struct UserData {
     BitMaps.BitMap shoppingCheckIns;
 }
 
+/// @title Amino is a blockchain fitness and shopping rewards company
+/// @author Parth Patel & Sumit Vekariya
 contract Amino is ERC20, Ownable {
 
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -61,6 +63,7 @@ contract Amino is ERC20, Ownable {
     event PromoCoinsReward(address indexed user, uint256 amount);
 
     constructor(address _owner) ERC20("Amino", "AMN") {
+        /// @notice The owner of the contract is the one who deploys the contract
         if (_owner == address(0)) {
             revert Amino_Zero_Arguments();
         }
@@ -68,6 +71,7 @@ contract Amino is ERC20, Ownable {
         _transferOwnership(_owner);
     }
 
+    /// @notice This modifier is used to authorize the address to call the functions
     modifier isAuthorized() {
         if (!isAuthorizedAddress[msg.sender]) {
             revert Amino_Not_Authorized();
@@ -75,6 +79,8 @@ contract Amino is ERC20, Ownable {
         _;
     }
 
+    /// @param user address of the user checking in
+    /// @param dailyCheckInAmount checking in reward amount
     function dailyCheckIn(address user, uint256 dailyCheckInAmount) external isAuthorized {
         if (dailyCheckInAmount > DAILY_CHECKIN_REWARD_MAX) {
             revert Amino_Rewards_Exceeds_Max_Allowed();
@@ -91,6 +97,8 @@ contract Amino is ERC20, Ownable {
         emit DailyCheckIn(user, dailyCheckInAmount);
     }
 
+    /// @param user address of the user
+    /// @param dailyStepRewardAmount  step reward amount for that day
     function dailyStepReward(address user, uint256 dailyStepRewardAmount) external isAuthorized {
         if (dailyStepRewardAmount > DAILY_STEP_REWARD_MAX) {
             revert Amino_Rewards_Exceeds_Max_Allowed();
@@ -106,6 +114,8 @@ contract Amino is ERC20, Ownable {
         emit DailyStepCheckIn(user, dailyStepRewardAmount);
     }
 
+    /// @param user address of the user
+    /// @param dailyChallengeRewardAmount reward amount for challenge of that day 
     function dailyChallengeReward(address user, uint256 dailyChallengeRewardAmount) external isAuthorized {
         if (dailyChallengeRewardAmount > DAILY_CHALLENGE_REWARD_MAX) {
             revert Amino_Rewards_Exceeds_Max_Allowed();
@@ -121,6 +131,8 @@ contract Amino is ERC20, Ownable {
         emit DailyChallengeCheckIn(user, dailyChallengeRewardAmount);
     }
 
+    /// @param user address of the user
+    /// @param dailyLeaderboardRewardAmount reward amount for leaderboard of that day
     function dailyLeaderboardReward(address user, uint256 dailyLeaderboardRewardAmount) external isAuthorized{
         if (dailyLeaderboardRewardAmount > DAILY_LEADERBOARD_REWARD_MAX) {
             revert Amino_Rewards_Exceeds_Max_Allowed();
@@ -136,6 +148,10 @@ contract Amino is ERC20, Ownable {
         emit DailyLeaderboardCheckIn(user, dailyLeaderboardRewardAmount);
     }
 
+    /// @notice This function is used to reward the user for shopping
+    /// @param user address of the user
+    /// @param dailyShoppingRewardAmount reward amount for shopping of that day
+    /// @param priceInUSD price of the token in USD
     function shoppingRewards(address user, uint256 dailyShoppingRewardAmount, uint256 priceInUSD) external isAuthorized returns(uint256 rewardAmountInUSD) {
         if (!isShoppingRewardEnabled) {
             revert Amino_Shopping_Reward_Disabled();
@@ -159,6 +175,8 @@ contract Amino is ERC20, Ownable {
         
     }
 
+    /// @param user address of the user
+    /// @param referres address of the referres
     function referralReward(address user, address[] memory referres) external isAuthorized {
         if (referres.length != 3) {
             revert Amino_Invalid_Arguments();
@@ -177,6 +195,8 @@ contract Amino is ERC20, Ownable {
         emit ReferralReward(user);
     }
 
+    /// @param user address of the user
+    /// @param promoRewardAmount promotional reward amount
     function grantPromoCoins(address user, uint256 promoRewardAmount) external isAuthorized {
         if (promoRewardAmount > PROMO_COIN_REWARD_MAX) {
             revert Amino_Rewards_Exceeds_Max_Allowed();
@@ -199,10 +219,13 @@ contract Amino is ERC20, Ownable {
         emit Referred(user1, user2);
     }
 
+    /// @dev allows owner to disale shopping rewards
     function disableShoppingRewards() external onlyOwner() {
         isShoppingRewardEnabled = false;
     }
 
+    /// @dev allows owner to update the time interval
+    /// @param newTimeInterval new time interval
     function updateTimeInterval(uint256 newTimeInterval) external onlyOwner() {
         if (newTimeInterval == 0) {
             revert Amino_Zero_Arguments();
