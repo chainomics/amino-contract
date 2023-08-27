@@ -6,6 +6,9 @@ import "openzeppelin/utils/structs/BitMaps.sol";
 import "openzeppelin/utils/structs/EnumerableSet.sol";
 import "openzeppelin/access/Ownable.sol";
 
+import { console2 } from "forge-std/console2.sol";
+
+
 error Amino_Zero_Arguments();
 error Amino_Invalid_Arguments();
 error Amino_Not_Authorized();
@@ -86,7 +89,7 @@ contract Amino is ERC20, Ownable {
             revert Amino_Rewards_Exceeds_Max_Allowed();
         }
         UserData storage _userData = userData[user];
-        uint256 currentDay = block.timestamp % SECONDS_IN_DAY;
+        uint256 currentDay = block.timestamp / SECONDS_IN_DAY;
         if (block.timestamp - _userData.lastCalledDailyCheckIn <= timeInterval) {
             revert Amino_Called_Within_Time_Interval();
         }
@@ -104,7 +107,7 @@ contract Amino is ERC20, Ownable {
             revert Amino_Rewards_Exceeds_Max_Allowed();
         }
         UserData storage _userData = userData[user];
-        uint256 currentDay = block.timestamp % SECONDS_IN_DAY;
+        uint256 currentDay = block.timestamp / SECONDS_IN_DAY;
         if (block.timestamp - _userData.lastCalledStepCheckIn <= timeInterval) {
             revert Amino_Called_Within_Time_Interval();
         }
@@ -121,7 +124,7 @@ contract Amino is ERC20, Ownable {
             revert Amino_Rewards_Exceeds_Max_Allowed();
         }
         UserData storage _userData = userData[user];
-        uint256 currentDay = block.timestamp % SECONDS_IN_DAY;
+        uint256 currentDay = block.timestamp / SECONDS_IN_DAY;
         if (block.timestamp - _userData.lastCalledChallengeCheckIn <= timeInterval) {
             revert Amino_Called_Within_Time_Interval();
         }
@@ -138,7 +141,7 @@ contract Amino is ERC20, Ownable {
             revert Amino_Rewards_Exceeds_Max_Allowed();
         }
         UserData storage _userData = userData[user];
-        uint256 currentDay = block.timestamp % SECONDS_IN_DAY;
+        uint256 currentDay = block.timestamp / SECONDS_IN_DAY;
         if (block.timestamp - _userData.lastCalledLeaderboardCheckIn <= timeInterval) {
             revert Amino_Called_Within_Time_Interval();
         }
@@ -160,7 +163,7 @@ contract Amino is ERC20, Ownable {
             revert Amino_Rewards_Exceeds_Max_Allowed();
         }
         UserData storage _userData = userData[user];
-        uint256 currentDay = block.timestamp % SECONDS_IN_DAY;
+        uint256 currentDay = block.timestamp / SECONDS_IN_DAY;
         if (block.timestamp - _userData.lastCalledShoppingCheckIn <= timeInterval) {
             revert Amino_Called_Within_Time_Interval();
         }
@@ -205,7 +208,7 @@ contract Amino is ERC20, Ownable {
         if (_userData.firstDay != 0) {
             revert Amino_Promo_Only_To_New_Users();
         }
-        uint256 currentDay = block.timestamp % SECONDS_IN_DAY;
+        uint256 currentDay = block.timestamp / SECONDS_IN_DAY;
         _userData.firstDay = uint48(currentDay);
         _mint(user, promoRewardAmount);
         emit PromoCoinsReward(user, promoRewardAmount);
@@ -234,5 +237,19 @@ contract Amino is ERC20, Ownable {
         }
         timeInterval = newTimeInterval;
         emit UpdateTimeInterval(newTimeInterval);
+    }
+
+    function getUserData(address user) external returns(bool, uint48, uint40, uint40, uint40, uint40, uint40, uint40) {
+        UserData storage _userData = userData[user];
+        return (
+            _userData.hasClaimedPromoTokens, 
+            _userData.firstDay, 
+            _userData.totalDailyCheckIns,
+            _userData.lastCalledDailyCheckIn,
+            _userData.lastCalledStepCheckIn,
+            _userData.lastCalledChallengeCheckIn,
+            _userData.lastCalledLeaderboardCheckIn,
+            _userData.lastCalledShoppingCheckIn
+            );
     }
 }
