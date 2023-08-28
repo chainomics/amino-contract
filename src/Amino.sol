@@ -70,6 +70,7 @@ contract Amino is ERC20, Ownable {
         if (_owner == address(0)) {
             revert Amino_Zero_Arguments();
         }
+        isShoppingRewardEnabled = true;
         isAuthorizedAddress[_owner] = true;
         _transferOwnership(_owner);
     }
@@ -216,7 +217,7 @@ contract Amino is ERC20, Ownable {
 
     /// @param user1 address of the user who referred
     /// @param user2 address of the user who is referred
-    function referred(address user1, address user2) external onlyOwner() {
+    function referred(address user1, address user2) external isAuthorized {
         if (user1 == address(0) || user2 == address(0)) {
             revert Amino_Zero_Arguments();
         }
@@ -225,18 +226,22 @@ contract Amino is ERC20, Ownable {
     }
 
     /// @dev allows owner to disale shopping rewards
-    function disableShoppingRewards() external onlyOwner() {
+    function disableShoppingRewards() external isAuthorized {
         isShoppingRewardEnabled = false;
     }
 
     /// @dev allows owner to update the time interval
     /// @param newTimeInterval new time interval
-    function updateTimeInterval(uint256 newTimeInterval) external onlyOwner() {
+    function updateTimeInterval(uint256 newTimeInterval) external isAuthorized {
         if (newTimeInterval == 0) {
             revert Amino_Zero_Arguments();
         }
         timeInterval = newTimeInterval;
         emit UpdateTimeInterval(newTimeInterval);
+    }
+
+    function updateAuthorize(address addr, bool toUpdate) external onlyOwner() {
+        isAuthorizedAddress[addr] = toUpdate;
     }
 
     function getUserData(address user) external returns(bool, uint48, uint40, uint40, uint40, uint40, uint40, uint40) {

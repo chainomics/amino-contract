@@ -262,4 +262,99 @@ contract AminoTest is PRBTest, StdCheats {
        assertEq(lastCalledLeaderboardCheckIn, block.timestamp, "invalid lastCalledDailyCheckIn");
     }
 
+     function test_shoppingRewards_only_be_called_by_authorized_address() public {
+        vm.startPrank(alice);
+        vm.expectRevert(Amino_Not_Authorized.selector);
+        amino.shoppingRewards(alice, 1000, 1);
+        vm.stopPrank();
+    }
+
+    function test_shoppingRewards_has_max_cap_on_mint() public {
+       vm.startPrank(owner);
+       vm.expectRevert(Amino_Rewards_Exceeds_Max_Allowed.selector);
+       amino.shoppingRewards(alice, 1000000000000000000001, 1);
+       vm.stopPrank();
+    }
+
+    function test_shoppingRewards_reverts_if_called_within_timeInterval() public {
+       vm.startPrank(owner);
+       amino.shoppingRewards(alice, 1000, 1);
+       skip(30 seconds);
+       vm.expectRevert(Amino_Called_Within_Time_Interval.selector);
+       amino.shoppingRewards(alice, 1000, 1);
+       vm.stopPrank();
+    }
+
+    function test_shoppingRewards_reverts_if_disabled() public {
+       vm.startPrank(owner);
+       amino.disableShoppingRewards();
+       vm.expectRevert(Amino_Shopping_Reward_Disabled.selector);
+       amino.shoppingRewards(alice, 1000, 1);
+       vm.stopPrank();
+    }
+
+    function test_shoppingRewards_happy_path() public {
+       uint256 aliceBalanceBefore = amino.balanceOf(alice);
+       vm.startPrank(owner);
+       amino.shoppingRewards(alice, 1000, 1);
+       skip(1 days + 1);
+       uint256 rewardAmountInUSD = amino.shoppingRewards(alice, 1000, 1);
+       vm.stopPrank();
+       uint256 aliceBalanceAfter = amino.balanceOf(alice);
+       (bool hasClaimedPromoTokens, 
+        uint48 firstDay, 
+        uint40 totalDailyCheckIns,
+        uint40 lastCalledDailyCheckIn,
+        uint40 lastCalledStepCheckIn,
+        uint40 lastCalledChallengeCheckIn,
+        uint40 lastCalledLeaderboardCheckIn,
+        uint40 lastCalledShoppingCheckIn
+       ) = amino.getUserData(alice);
+       assertEq(rewardAmountInUSD, 1000, "invalid return value by shoppingRewards");
+       assertEq(aliceBalanceAfter - aliceBalanceBefore, 2000, "invalid balance");
+       assertEq(lastCalledShoppingCheckIn, block.timestamp, "invalid lastCalledDailyCheckIn");
+    }
+
+    function test_referred_reverts_on_zero_arguments() public {
+       vm.startPrank(owner);
+       vm.expectRevert(Amino_Zero_Arguments.selector);
+       amino.referred(alice, address(0));
+       vm.expectRevert(Amino_Zero_Arguments.selector);
+       amino.referred(address(0), alice);
+       vm.stopPrank();
+    }
+
+    function test_referred_only_be_called_by_authorized_address() public {
+        vm.startPrank(alice);
+        vm.expectRevert(Amino_Not_Authorized.selector);
+        amino.referred(alice, bob);
+        vm.stopPrank();
+    }
+
+    function test_disableShoppingRewards_only_called_by_authorized_address() public {
+        vm.startPrank(alice);
+        vm.expectRevert(Amino_Not_Authorized.selector);
+        amino.disableShoppingRewards();
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        amino.disableShoppingRewards();
+        assertEq(amino.isShoppingRewardEnabled(), false, "invalid value");
+        vm.stopPrank();
+    }
+
+    function test_updateTimeInterval_only_called_by_authorized_address() public {
+        vm.startPrank(alice);
+        vm.expectRevert(Amino_Not_Authorized.selector);
+        amino.updateTimeInterval(100);
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        vm.expectRevert(Amino_Zero_Arguments.selector);
+        amino.updateTimeInterval(0);
+        amino.updateTimeInterval(100);
+        assertEq(amino.timeInterval(), 100, "invalid value");
+        vm.stopPrank();
+    }
+
 }
